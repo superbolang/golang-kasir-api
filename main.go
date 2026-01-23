@@ -23,9 +23,9 @@ var message = `{
 		"PATCH	/api/v1/kategori{id}" : "update sebagian field",
 		"DELETE	/api/v1/kategori/{id}" : "menghapus 1 kategori",
 	},
-	"environtment":"production",
-	"message":"simple API",
-	"version":"1.0.0"
+	"environtment" : "production",
+	"message" : "simple API",
+	"version" : "1.0.0"
 }`
 
 func main() {
