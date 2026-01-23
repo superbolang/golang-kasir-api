@@ -11,13 +11,13 @@ import (
 var message = `{
 	"endpoint" : {
 		"GET	/api/v1/produk" : "tampilkan semua produk",
-		"POST	/api/v1/produk"	: "create produk",
+		"POST	/api/v1/produk"	: "tambah produk",
 		"GET	/api/v1/produk/{id}" : "tampilkan 1 produk",
 		"PUT"	/api/v1/produk/{id}" : "update seluruh field",
 		"PATCH	/api/v1/produk{id}" : "update sebagian field",
 		"DELETE	/api/v1/produk/{id}" : "menghapus 1 produk",
 		"GET	/api/v1/kategori" : "tampilkan semua kategori",
-		"POST	/api/v1/kategori" : "create kategori",
+		"POST	/api/v1/kategori" : "tambah kategori",
 		"GET	/api/v1/kategori/{id}" : "tampilkan 1 kategori",
 		"PUT"	/api/v1/kategori/{id}" : "update seluruh field",
 		"PATCH	/api/v1/kategori{id}" : "update sebagian field",
