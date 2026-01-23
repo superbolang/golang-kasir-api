@@ -8,9 +8,34 @@ import (
 	"strconv"
 )
 
+var message = `{
+	"endpoint" : {
+		"GET	/api/v1/produk" : "tampilkan semua produk",
+		"POST	/api/v1/produk"	: "create produk",
+		"GET	/api/v1/produk/{id}" : "tampilkan 1 produk",
+		"PUT"	/api/v1/produk/{id}" : "update seluruh field",
+		"PATCH	/api/v1/produk{id}" : "update sebagian field",
+		"DELETE	/api/v1/produk/{id}" : "menghapus 1 produk",
+		"GET	/api/v1/kategori" : "tampilkan semua kategori",
+		"POST	/api/v1/kategori" : "create kategori",
+		"GET	/api/v1/kategori/{id}" : "tampilkan 1 kategori",
+		"PUT"	/api/v1/kategori/{id}" : "update seluruh field",
+		"PATCH	/api/v1/kategori{id}" : "update sebagian field",
+		"DELETE	/api/v1/kategori/{id}" : "menghapus 1 kategori",
+	},
+	"environtment":"production",
+	"message":"simple API",
+	"version":"1.0.0"
+}`
+
 func main() {
+	// Endpoint
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(message))
+	})
 	// Produk handler
-	http.HandleFunc("/api/produk", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/v1/produk", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			handler.GetAllProduk(w, r)
@@ -21,7 +46,7 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/api/produk/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/v1/produk/", func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.URL.Path[len("/api/produk/"):]
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
@@ -43,7 +68,7 @@ func main() {
 	})
 
 	// Kategori handler
-	http.HandleFunc("/api/kategori", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/v1/kategori", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			handler.GetAllKategori(w, r)
@@ -54,7 +79,7 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/api/kategori/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/v1/kategori/", func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.URL.Path[len("/api/kategori/"):]
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
