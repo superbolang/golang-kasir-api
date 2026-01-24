@@ -47,7 +47,7 @@ func main() {
 	})
 
 	http.HandleFunc("/api/v1/produk/", func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.URL.Path[len("/api/produk/"):]
+		idStr := r.URL.Path[len("/api/v1/produk/"):]
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -80,7 +80,7 @@ func main() {
 	})
 
 	http.HandleFunc("/api/v1/kategori/", func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.URL.Path[len("/api/kategori/"):]
+		idStr := r.URL.Path[len("/api/v1/kategori/"):]
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
