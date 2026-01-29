@@ -2,20 +2,26 @@ package main
 
 import (
 	"fmt"
+	"gokasir-api/database"
 	"gokasir-api/handler"
+	"gokasir-api/repository"
+	"gokasir-api/service"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
+	"strings"
+
+	"github.com/spf13/viper"
 )
 
 var message = `{
 	"endpoint" : {
-		"GET	/api/v1/produk" : "tampilkan semua produk",
-		"POST	/api/v1/produk"	: "tambah produk",
-		"GET	/api/v1/produk/{id}" : "tampilkan 1 produk",
-		"PUT"	/api/v1/produk/{id}" : "update seluruh field",
-		"PATCH	/api/v1/produk{id}" : "update sebagian field",
-		"DELETE	/api/v1/produk/{id}" : "menghapus 1 produk",
+		"GET	/api/v1/product" : "tampilkan semua product",
+		"POST	/api/v1/product"	: "tambah product",
+		"GET	/api/v1/product/{id}" : "tampilkan 1 product",
+		"PUT"	/api/v1/product/{id}" : "update seluruh field",
+		"PATCH	/api/v1/product{id}" : "update sebagian field",
+		"DELETE	/api/v1/product/{id}" : "menghapus 1 product",
 		"GET	/api/v1/kategori" : "tampilkan semua kategori",
 		"POST	/api/v1/kategori" : "tambah kategori",
 		"GET	/api/v1/kategori/{id}" : "tampilkan 1 kategori",
@@ -28,84 +34,54 @@ var message = `{
 	"version" : "1.0.0"
 }`
 
+type Config struct {
+	Port   string `mapstructure:"PORT"`
+	DBConn string `mapstructure:"DB_CONN"`
+}
+
 func main() {
+	// Config
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	if _, err := os.Stat(".env"); err == nil {
+		viper.SetConfigFile(".env")
+		_ = viper.ReadInConfig()
+	}
+
+	config := Config{
+		Port:   viper.GetString("PORT"),
+		DBConn: viper.GetString("DB_CONN"),
+	}
+
+	// Init DB
+	db, err := database.InitDB(config.DBConn)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
 	// Endpoint
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(message))
 	})
-	// Produk handler
-	http.HandleFunc("/api/v1/produk", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetAllProduk(w, r)
-		case http.MethodPost:
-			handler.CreateProduk(w, r)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
 
-	http.HandleFunc("/api/v1/produk/", func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.URL.Path[len("/api/v1/produk/"):]
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetProdukByID(w, r, id)
-		case http.MethodPut:
-			handler.UpdateProduk(w, r, id)
-		case http.MethodPatch:
-			handler.PatchProduk(w, r, id)
-		case http.MethodDelete:
-			handler.DeleteProduk(w, r, id)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	// Layer
+	productRepository := repository.NewProductRepository(db)
+	productService := service.NewProductServiceImpl(productRepository)
+	productHandler := handler.NewProductHandler(productService)
 
-	// Kategori handler
-	http.HandleFunc("/api/v1/kategori", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetAllKategori(w, r)
-		case http.MethodPost:
-			handler.CreateKategori(w, r)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	// Handler
+	http.Handle("/api/v1/product", productHandler)
+	http.Handle("/api/v1/product/", productHandler)
 
-	http.HandleFunc("/api/v1/kategori/", func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.URL.Path[len("/api/v1/kategori/"):]
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		switch r.Method {
-		case http.MethodGet:
-			handler.GetKategoriByID(w, r, id)
-		case http.MethodPut:
-			handler.UpdateKategori(w, r, id)
-		case http.MethodPatch:
-			handler.PatchKategori(w, r, id)
-		case http.MethodDelete:
-			handler.DeleteKategori(w, r, id)
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-
+	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("API server running OK"))
+		w.Write([]byte("API running OK"))
 	})
 
-	fmt.Println("Server running on port: 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("Server running on port: " + config.Port)
+	log.Fatal(http.ListenAndServe(":"+config.Port, nil))
 }
