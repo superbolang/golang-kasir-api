@@ -56,7 +56,7 @@ func (h *ProductHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.GetAllProduct()
 	if err != nil {
-		http.Error(w, "Failed to get all items", http.StatusInternalServerError)
+		http.Error(w, "Failed to get all product", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -78,7 +78,7 @@ func (h *ProductHandler) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	product, err := h.service.CreateProduct(&req)
 	if err != nil {
-		http.Error(w, "Error creating item", http.StatusInternalServerError)
+		http.Error(w, "Error creating product", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

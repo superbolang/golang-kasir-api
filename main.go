@@ -16,18 +16,18 @@ import (
 
 var message = `{
 	"endpoint" : {
-		"GET	/api/v1/product" : "tampilkan semua product",
-		"POST	/api/v1/product"	: "tambah product",
-		"GET	/api/v1/product/{id}" : "tampilkan 1 product",
-		"PUT"	/api/v1/product/{id}" : "update seluruh field",
-		"PATCH	/api/v1/product{id}" : "update sebagian field",
-		"DELETE	/api/v1/product/{id}" : "menghapus 1 product",
-		"GET	/api/v1/kategori" : "tampilkan semua kategori",
-		"POST	/api/v1/kategori" : "tambah kategori",
-		"GET	/api/v1/kategori/{id}" : "tampilkan 1 kategori",
-		"PUT"	/api/v1/kategori/{id}" : "update seluruh field",
-		"PATCH	/api/v1/kategori{id}" : "update sebagian field",
-		"DELETE	/api/v1/kategori/{id}" : "menghapus 1 kategori",
+		"GET	/api/v1/product" : "show all product",
+		"POST	/api/v1/product"	: "add product",
+		"GET	/api/v1/product/{id}" : "show 1 product",
+		"PUT"	/api/v1/product/{id}" : "update product",
+		"PATCH	/api/v1/product{id}" : "update field product",
+		"DELETE	/api/v1/product/{id}" : "delete 1 product",
+		"GET	/api/v1/category" : "show all category",
+		"POST	/api/v1/category" : "add kategori",
+		"GET	/api/v1/category/{id}" : "show 1 category",
+		"PUT"	/api/v1/category/{id}" : "update category",
+		"PATCH	/api/v1/category{id}" : "update field category",
+		"DELETE	/api/v1/category/{id}" : "delete 1 category",
 	},
 	"environtment" : "production",
 	"message" : "simple API",
@@ -72,9 +72,15 @@ func main() {
 	productService := service.NewProductServiceImpl(productRepository)
 	productHandler := handler.NewProductHandler(productService)
 
+	categoryRepository := repository.NewCategoryRepository(db)
+	categoryService := service.NewCategoryService(categoryRepository)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+
 	// Handler
 	http.Handle("/api/v1/product", productHandler)
 	http.Handle("/api/v1/product/", productHandler)
+	http.Handle("/api/v1/category", categoryHandler)
+	http.Handle("/api/v1/category/", categoryHandler)
 
 	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
