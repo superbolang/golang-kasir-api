@@ -5,6 +5,7 @@ import (
 	"gokasir-api/models"
 	"gokasir-api/service"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -56,7 +57,8 @@ func (h *ProductHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.GetAllProduct()
 	if err != nil {
-		http.Error(w, "Failed to get all product", http.StatusInternalServerError)
+		log.Printf("Error handling get product: %v", err)
+		http.Error(w, "Error handling get product", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -67,18 +69,19 @@ func (h *ProductHandler) handleGetAll(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) handleCreate(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		http.Error(w, "Error handling reading request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 	var req models.CreateProductRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "Error unmarshal", http.StatusInternalServerError)
+		http.Error(w, "Error handling unmarshal", http.StatusInternalServerError)
 		return
 	}
 	product, err := h.service.CreateProduct(&req)
 	if err != nil {
-		http.Error(w, "Error creating product", http.StatusInternalServerError)
+		log.Printf("Error handling creating product: %v", err)
+		http.Error(w, "Error handling creating product", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -89,7 +92,8 @@ func (h *ProductHandler) handleCreate(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) handleGetByID(w http.ResponseWriter, r *http.Request, id int) {
 	product, err := h.service.GetProductByID(id)
 	if err != nil {
-		http.Error(w, "Error getting product", http.StatusInternalServerError)
+		log.Printf("Error handling getting single product: %v", err)
+		http.Error(w, "Error handling getting single product", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -100,18 +104,19 @@ func (h *ProductHandler) handleGetByID(w http.ResponseWriter, r *http.Request, i
 func (h *ProductHandler) handleUpdate(w http.ResponseWriter, r *http.Request, id int) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		http.Error(w, "Error handling reading request body", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
 	var req models.UpdateProductRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "Error unmarshal", http.StatusInternalServerError)
+		http.Error(w, "Error handling unmarshal", http.StatusInternalServerError)
 		return
 	}
 	product, err := h.service.UpdateProduct(id, &req)
 	if err != nil {
-		http.Error(w, "Error updating product", http.StatusInternalServerError)
+		log.Printf("Error handling updating product: %v", err)
+		http.Error(w, "Error handling updating product", http.StatusInternalServerError)
 		return
 	}
 	product.ID = id
@@ -123,18 +128,19 @@ func (h *ProductHandler) handleUpdate(w http.ResponseWriter, r *http.Request, id
 func (h *ProductHandler) handlePatch(w http.ResponseWriter, r *http.Request, id int) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		http.Error(w, "Error handling reading request body", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
 	var req models.PatchProductRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "Error unmarshal", http.StatusInternalServerError)
+		http.Error(w, "Error handling unmarshal", http.StatusInternalServerError)
 		return
 	}
 	product, err := h.service.PatchProduct(id, &req)
 	if err != nil {
-		http.Error(w, "Error patching product", http.StatusInternalServerError)
+		log.Printf("Error handling patching product: %v", err)
+		http.Error(w, "Error handling patching product", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -144,7 +150,8 @@ func (h *ProductHandler) handlePatch(w http.ResponseWriter, r *http.Request, id 
 
 func (h *ProductHandler) handleDelete(w http.ResponseWriter, r *http.Request, id int) {
 	if err := h.service.DeleteProduct(id); err != nil {
-		http.Error(w, "Error deleting product", http.StatusInternalServerError)
+		log.Printf("Error handling deleting product: %v", err)
+		http.Error(w, "Error handling deleting product", http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

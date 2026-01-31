@@ -22,9 +22,10 @@ func (s *ProductServiceImpl) CreateProduct(req *models.CreateProductRequest) (*m
 		return nil, err
 	}
 	product := &models.Product{
-		Name:  req.Name,
-		Price: req.Price,
-		Stock: req.Stock,
+		Name:        req.Name,
+		Price:       req.Price,
+		Stock:       req.Stock,
+		Category_ID: req.Category_ID,
 	}
 	if err := s.repo.CreateProduct(product); err != nil {
 		return nil, err
@@ -41,9 +42,10 @@ func (s *ProductServiceImpl) UpdateProduct(id int, req *models.UpdateProductRequ
 		return nil, err
 	}
 	product := &models.Product{
-		Name:  req.Name,
-		Price: req.Price,
-		Stock: req.Stock,
+		Name:        req.Name,
+		Price:       req.Price,
+		Stock:       req.Stock,
+		Category_ID: req.Category_ID,
 	}
 	if err := s.repo.UpdateProduct(id, product); err != nil {
 		return nil, err
@@ -52,7 +54,7 @@ func (s *ProductServiceImpl) UpdateProduct(id int, req *models.UpdateProductRequ
 }
 
 func (s *ProductServiceImpl) PatchProduct(id int, req *models.PatchProductRequest) (*models.Product, error) {
-	return s.repo.PatchProduct(id, req.Name, req.Price, req.Stock)
+	return s.repo.PatchProduct(id, req.Name, req.Price, req.Stock, req.Category_ID)
 }
 
 func (s *ProductServiceImpl) DeleteProduct(id int) error {

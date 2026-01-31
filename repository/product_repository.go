@@ -7,7 +7,7 @@ type ProductRepository interface {
 	CreateProduct(req *models.Product) error
 	FindProductByID(id int) (*models.Product, error)
 	UpdateProduct(id int, req *models.Product) error
-	PatchProduct(id int, name *string, price, stock *int) (*models.Product, error)
+	PatchProduct(id int, name *string, price, stock, category_id *int) (*models.Product, error)
 	DeleteProduct(id int) error
 	ExistID(id int) (bool, error)
 }
