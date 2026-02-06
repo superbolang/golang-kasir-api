@@ -23,8 +23,16 @@ func (r *ProductRepositoryImpl) ExistID(id int) (bool, error) {
 	return exist, err
 }
 
-func (r *ProductRepositoryImpl) FindAllProduct() ([]models.Product, error) {
-	rows, err := r.db.Query("SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name FROM product p INNER JOIN category c ON p.category_id = c.id ORDER BY p.id")
+func (r *ProductRepositoryImpl) FindAllProduct(name string) ([]models.Product, error) {
+	query := "SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name FROM product p INNER JOIN category c ON p.category_id = c.id"
+	var args []any
+	if name != "" {
+		query += " WHERE p.name ILIKE $1 ORDER BY p.id"
+		args = append(args, "%"+name+"%")
+	} else {
+		query += " ORDER BY p.id"
+	}
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		log.Printf("Error getting all product: %v", err)
 		return nil, err

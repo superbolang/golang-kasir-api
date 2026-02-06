@@ -1,0 +1,18 @@
+package service
+
+import (
+	"gokasir-api/models"
+	"gokasir-api/repository"
+)
+
+type TransactionServiceImpl struct {
+	repo repository.TransactionRepository
+}
+
+func NewTransactionService(repo repository.TransactionRepository) TransactionService {
+	return &TransactionServiceImpl{repo: repo}
+}
+
+func (s *TransactionServiceImpl) Checkout(item []models.CheckoutItem) (*models.Transaction, error) {
+	return s.repo.CreateTransaction(item)
+}

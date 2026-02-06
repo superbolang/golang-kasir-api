@@ -9,12 +9,12 @@ type ProductServiceImpl struct {
 	repo repository.ProductRepository
 }
 
-func NewProductServiceImpl(repo repository.ProductRepository) ProductService {
+func NewProductService(repo repository.ProductRepository) ProductService {
 	return &ProductServiceImpl{repo: repo}
 }
 
-func (s *ProductServiceImpl) GetAllProduct() ([]models.Product, error) {
-	return s.repo.FindAllProduct()
+func (s *ProductServiceImpl) GetAllProduct(name string) ([]models.Product, error) {
+	return s.repo.FindAllProduct(name)
 }
 
 func (s *ProductServiceImpl) CreateProduct(req *models.CreateProductRequest) (*models.Product, error) {

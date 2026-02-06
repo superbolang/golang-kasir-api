@@ -55,7 +55,8 @@ func (h *ProductHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ProductHandler) handleGetAll(w http.ResponseWriter, r *http.Request) {
-	products, err := h.service.GetAllProduct()
+	name := r.URL.Query().Get("name")
+	products, err := h.service.GetAllProduct(name)
 	if err != nil {
 		log.Printf("Error handling get product: %v", err)
 		http.Error(w, "Error handling get product", http.StatusInternalServerError)

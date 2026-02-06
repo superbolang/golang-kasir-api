@@ -69,18 +69,23 @@ func main() {
 
 	// Layer
 	productRepository := repository.NewProductRepository(db)
-	productService := service.NewProductServiceImpl(productRepository)
+	productService := service.NewProductService(productRepository)
 	productHandler := handler.NewProductHandler(productService)
 
 	categoryRepository := repository.NewCategoryRepository(db)
 	categoryService := service.NewCategoryService(categoryRepository)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 
+	transactionRepository := repository.NewTransactionRepository(db)
+	transactionService := service.NewTransactionService(transactionRepository)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
+
 	// Handler
 	http.Handle("/api/v1/product", productHandler)
 	http.Handle("/api/v1/product/", productHandler)
 	http.Handle("/api/v1/category", categoryHandler)
 	http.Handle("/api/v1/category/", categoryHandler)
+	http.Handle("/api/v1/checkout", transactionHandler)
 
 	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
