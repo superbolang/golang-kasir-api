@@ -24,3 +24,7 @@ func (s *TransactionServiceImpl) GetAllTransaction() ([]models.TransactionDetail
 func (s *TransactionServiceImpl) TodaysTransaction() (*models.Report, error) {
 	return s.repo.TodaysTransaction()
 }
+
+func (s *TransactionServiceImpl) RangeTransaction(start, end string) (*models.Report, error) {
+	return s.repo.RangeTransaction(start, end)
+}

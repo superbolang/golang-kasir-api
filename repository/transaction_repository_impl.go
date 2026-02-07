@@ -97,9 +97,7 @@ func (r *TransactionRepositoryImpl) FindAllTransaction() ([]models.TransactionDe
 }
 
 func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) {
-	// Get today's date
 	currentTime := time.Now().Format("2006-01-02")
-	log.Println("Time: ", currentTime)
 
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -109,15 +107,11 @@ func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) 
 
 	rows, err := tx.Query("SELECT id, total_amount FROM transactions WHERE created_at::date = $1", currentTime)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Printf("Error no rows: %v", err)
-			return nil, err
-		}
 		log.Printf("Error getting transaction: %v", err)
 		return nil, err
 	}
-	log.Println(rows)
 	defer rows.Close()
+	totalEarning := 0
 	var transactions []models.Transaction
 	for rows.Next() {
 		var transaction models.Transaction
@@ -125,13 +119,11 @@ func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) 
 			return nil, err
 		}
 		transactions = append(transactions, transaction)
+		totalEarning += transaction.TotalAmount
 	}
-	log.Println("Transaction: ", transactions)
-	totalTransaction := len(transactions)
-	totalEarning := 0
 	var productSold []models.ProductSold
-	for _, v := range transactions {
-		rows, err := tx.Query("SELECT p.name, t.quantity FROM transaction_details t INNER JOIN product p ON t.product_id = p.id WHERE t.transaction_id = $1", v.ID)
+	for i := range transactions {
+		rows, err := tx.Query("SELECT p.name, t.quantity FROM transaction_details t INNER JOIN product p ON t.product_id = p.id WHERE t.transaction_id = $1", transactions[i].ID)
 		if err != nil {
 			log.Printf("Error getting transaction details: %v", err)
 			return nil, err
@@ -142,10 +134,10 @@ func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) 
 			if err := rows.Scan(&product.ProductName, &product.ProductQty); err != nil {
 				return nil, err
 			}
+			productSold = append(productSold, product)
 		}
-		productSold = append(productSold, product)
-		totalEarning += v.TotalAmount
 	}
+	log.Println("All product sold: ", productSold)
 
 	highSelling := 0
 	var mostSold string
@@ -166,7 +158,75 @@ func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) 
 
 	return &models.Report{
 		TotalRevenue:     totalEarning,
-		TotalTransaction: totalTransaction,
+		TotalTransaction: len(transactions),
+		HighestSelling:   details,
+	}, err
+}
+
+func (r *TransactionRepositoryImpl) RangeTransaction(start, end string) (*models.Report, error) {
+	start_date := start + " 00:00:00"
+	end_date := end + " 23:59:50"
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query("SELECT id, total_amount FROM transactions WHERE created_at >= $1 AND created_at < $2", start_date, end_date)
+	if err != nil {
+		log.Printf("Error getting transaction: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+	totalEarning := 0
+	var transactions []models.Transaction
+	for rows.Next() {
+		var transaction models.Transaction
+		if err := rows.Scan(&transaction.ID, &transaction.TotalAmount); err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, transaction)
+		totalEarning += transaction.TotalAmount
+	}
+	var productSold []models.ProductSold
+	for i := range transactions {
+		rows, err := tx.Query("SELECT p.name, t.quantity FROM transaction_details t INNER JOIN product p ON t.product_id = p.id WHERE t.transaction_id = $1", transactions[i].ID)
+		if err != nil {
+			log.Printf("Error getting transaction details: %v", err)
+			return nil, err
+		}
+		defer rows.Close()
+		var product models.ProductSold
+		for rows.Next() {
+			if err := rows.Scan(&product.ProductName, &product.ProductQty); err != nil {
+				return nil, err
+			}
+			productSold = append(productSold, product)
+		}
+	}
+	log.Println("All product sold: ", productSold)
+
+	highSelling := 0
+	var mostSold string
+	for _, v := range productSold {
+		if v.ProductQty > highSelling {
+			highSelling = v.ProductQty
+			mostSold = v.ProductName
+		}
+	}
+	details := models.ProductSold{
+		ProductName: mostSold,
+		ProductQty:  highSelling,
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &models.Report{
+		TotalRevenue:     totalEarning,
+		TotalTransaction: len(transactions),
 		HighestSelling:   details,
 	}, err
 }

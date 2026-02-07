@@ -70,14 +70,27 @@ func (h *TransactionHandler) handleCheckout(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *TransactionHandler) handleGetTransaction(w http.ResponseWriter, r *http.Request) {
-	transactions, err := h.service.GetAllTransaction()
-	if err != nil {
-		http.Error(w, "Error handling get all transactions", http.StatusInternalServerError)
-		return
+	start := r.URL.Query().Get("start_date")
+	end := r.URL.Query().Get("end_date")
+	if start != "" && end != "" {
+		rangeTransaction, err := h.service.RangeTransaction(start, end)
+		if err != nil {
+			http.Error(w, "Error handling get range transaction", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(rangeTransaction)
+	} else {
+		transactions, err := h.service.GetAllTransaction()
+		if err != nil {
+			http.Error(w, "Error handling get all transactions", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(transactions)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(transactions)
 }
 
 func (h *TransactionHandler) handleGetTodaysTransaction(w http.ResponseWriter, r *http.Request) {
