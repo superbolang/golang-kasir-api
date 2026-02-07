@@ -86,6 +86,8 @@ func main() {
 	http.Handle("/api/v1/category", categoryHandler)
 	http.Handle("/api/v1/category/", categoryHandler)
 	http.Handle("/api/v1/checkout", transactionHandler)
+	http.Handle("/api/v1/report", transactionHandler)
+	http.Handle("/api/v1/report/today", transactionHandler)
 
 	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

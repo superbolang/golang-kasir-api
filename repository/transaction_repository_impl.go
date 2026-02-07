@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"gokasir-api/models"
 	"log"
+	"time"
 )
 
 type TransactionRepositoryImpl struct {
@@ -74,5 +75,98 @@ func (r *TransactionRepositoryImpl) CreateTransaction(items []models.CheckoutIte
 		TotalAmount: totalAmount,
 		Details:     details,
 	}, err
+}
 
+func (r *TransactionRepositoryImpl) FindAllTransaction() ([]models.TransactionDetail, error) {
+	query := "SELECT t.id, t.transaction_id, t.product_id, p.name, t.quantity, t.sub_total FROM transaction_details t INNER JOIN product p ON t.product_id = p.id ORDER BY t.id"
+	rows, err := r.db.Query(query)
+	if err != nil {
+		log.Printf("Error getting all transaction details: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+	var transactions []models.TransactionDetail
+	for rows.Next() {
+		var transaction models.TransactionDetail
+		if err := rows.Scan(&transaction.ID, &transaction.TransactionID, &transaction.ProductID, &transaction.ProductName, &transaction.Quantity, &transaction.SubTotal); err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, transaction)
+	}
+	return transactions, nil
+}
+
+func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) {
+	// Get today's date
+	currentTime := time.Now().Format("2006-01-02")
+	log.Println("Time: ", currentTime)
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query("SELECT id, total_amount FROM transactions WHERE created_at::date = $1", currentTime)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("Error no rows: %v", err)
+			return nil, err
+		}
+		log.Printf("Error getting transaction: %v", err)
+		return nil, err
+	}
+	log.Println(rows)
+	defer rows.Close()
+	var transactions []models.Transaction
+	for rows.Next() {
+		var transaction models.Transaction
+		if err := rows.Scan(&transaction.ID, &transaction.TotalAmount); err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, transaction)
+	}
+	log.Println("Transaction: ", transactions)
+	totalTransaction := len(transactions)
+	totalEarning := 0
+	var productSold []models.ProductSold
+	for _, v := range transactions {
+		rows, err := tx.Query("SELECT p.name, t.quantity FROM transaction_details t INNER JOIN product p ON t.product_id = p.id WHERE t.transaction_id = $1", v.ID)
+		if err != nil {
+			log.Printf("Error getting transaction details: %v", err)
+			return nil, err
+		}
+		defer rows.Close()
+		var product models.ProductSold
+		for rows.Next() {
+			if err := rows.Scan(&product.ProductName, &product.ProductQty); err != nil {
+				return nil, err
+			}
+		}
+		productSold = append(productSold, product)
+		totalEarning += v.TotalAmount
+	}
+
+	highSelling := 0
+	var mostSold string
+	for _, v := range productSold {
+		if v.ProductQty > highSelling {
+			highSelling = v.ProductQty
+			mostSold = v.ProductName
+		}
+	}
+	details := models.ProductSold{
+		ProductName: mostSold,
+		ProductQty:  highSelling,
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &models.Report{
+		TotalRevenue:     totalEarning,
+		TotalTransaction: totalTransaction,
+		HighestSelling:   details,
+	}, err
 }

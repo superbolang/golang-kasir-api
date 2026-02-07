@@ -16,3 +16,11 @@ func NewTransactionService(repo repository.TransactionRepository) TransactionSer
 func (s *TransactionServiceImpl) Checkout(item []models.CheckoutItem) (*models.Transaction, error) {
 	return s.repo.CreateTransaction(item)
 }
+
+func (s *TransactionServiceImpl) GetAllTransaction() ([]models.TransactionDetail, error) {
+	return s.repo.FindAllTransaction()
+}
+
+func (s *TransactionServiceImpl) TodaysTransaction() (*models.Report, error) {
+	return s.repo.TodaysTransaction()
+}

@@ -6,8 +6,6 @@ import (
 	"gokasir-api/service"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
 type TransactionHandler struct {
@@ -19,8 +17,7 @@ func NewTransactionHandler(service service.TransactionService) *TransactionHandl
 }
 
 func (h *TransactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/api/v1/checkout")
-	if r.URL.Path == "/api/v1/checkout" || r.URL.Path == "/api/v1/checkout/" {
+	if r.URL.Path == "/api/v1/checkout" {
 		switch r.Method {
 		case http.MethodPost:
 			h.handleCheckout(w, r)
@@ -29,19 +26,23 @@ func (h *TransactionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if strings.HasPrefix(path, "/") {
-		idStr := strings.TrimPrefix(path, "/")
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, "Invalid ID", http.StatusInternalServerError)
-			return
-		}
+	if r.URL.Path == "/api/v1/report" {
 		switch r.Method {
 		case http.MethodGet:
-			h.handleGet(w, r, id)
+			h.handleGetTransaction(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+		return
+	}
+	if r.URL.Path == "/api/v1/report/today" {
+		switch r.Method {
+		case http.MethodGet:
+			h.handleGetTodaysTransaction(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+		return
 	}
 	http.NotFound(w, r)
 }
@@ -58,14 +59,34 @@ func (h *TransactionHandler) handleCheckout(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Error handling unmarshal", http.StatusInternalServerError)
 		return
 	}
-	transaction, err := h.service.Checkout(req.Items)
+	checkout, err := h.service.Checkout(req.Items)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(transaction)
+	json.NewEncoder(w).Encode(checkout)
 }
 
-func (h *TransactionHandler) handleGet(w http.ResponseWriter, r *http.Request, id int) {}
+func (h *TransactionHandler) handleGetTransaction(w http.ResponseWriter, r *http.Request) {
+	transactions, err := h.service.GetAllTransaction()
+	if err != nil {
+		http.Error(w, "Error handling get all transactions", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(transactions)
+}
+
+func (h *TransactionHandler) handleGetTodaysTransaction(w http.ResponseWriter, r *http.Request) {
+	todaysTransaction, err := h.service.TodaysTransaction()
+	if err != nil {
+		http.Error(w, "Error handling get today's transaction", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(todaysTransaction)
+}

@@ -28,3 +28,14 @@ type CheckoutItem struct {
 type CheckoutRequest struct {
 	Items []CheckoutItem `json:"items"`
 }
+
+type Report struct {
+	TotalRevenue     int         `json:"total_revenue"`
+	TotalTransaction int         `json:"total_transaction"`
+	HighestSelling   ProductSold `json:"highest_selling"`
+}
+
+type ProductSold struct {
+	ProductName string
+	ProductQty  int
+}
