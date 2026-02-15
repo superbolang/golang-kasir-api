@@ -40,9 +40,10 @@ var message = `{
 }`
 
 type Config struct {
-	Port   string `mapstructure:"PORT"`
-	DBConn string `mapstructure:"DB_CONN"`
-	APIKey string `mapstructure:"API_KEY"`
+	Port        string `mapstructure:"PORT"`
+	DBConn      string `mapstructure:"DB_CONN"`
+	APIKey      string `mapstructure:"API_KEY"`
+	corsOrigins string `mapstructure:"ALLOWED_ORIGINS"`
 }
 
 func main() {
@@ -56,9 +57,10 @@ func main() {
 	}
 
 	config := Config{
-		Port:   viper.GetString("PORT"),
-		DBConn: viper.GetString("DB_CONN"),
-		APIKey: viper.GetString("API_KEY"),
+		Port:        viper.GetString("PORT"),
+		DBConn:      viper.GetString("DB_CONN"),
+		APIKey:      viper.GetString("API_KEY"),
+		corsOrigins: viper.GetString("ALLOWED_ORIGINS"),
 	}
 
 	// Init DB
@@ -87,6 +89,12 @@ func main() {
 	transactionService := service.NewTransactionService(transactionRepository)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 
+	// CORS config
+	corsCfg := middleware.DefaultCORSConfig()
+	if config.corsOrigins != "" {
+		corsCfg.AllowedOrigins = strings.Split(config.corsOrigins, ",")
+	}
+
 	// Build middleware chain: Logging → APIKey → Handler
 	protectedProductHandler := middleware.Chain(
 		productHandler,
@@ -94,17 +102,30 @@ func main() {
 		func(next http.Handler) http.Handler {
 			return middleware.APIKeyMiddleware(config.APIKey, next)
 		},
+		func(next http.Handler) http.Handler {
+			return middleware.CORSMiddleware(corsCfg, next)
+		},
 	)
 
 	protectedCategoryHandler := middleware.Chain(
-		categoryHandler, middleware.LoggingMiddleware, func(next http.Handler) http.Handler {
+		categoryHandler,
+		middleware.LoggingMiddleware,
+		func(next http.Handler) http.Handler {
 			return middleware.APIKeyMiddleware(config.APIKey, next)
+		},
+		func(next http.Handler) http.Handler {
+			return middleware.CORSMiddleware(corsCfg, next)
 		},
 	)
 
 	protectedTransactionHandler := middleware.Chain(
-		transactionHandler, middleware.LoggingMiddleware, func(next http.Handler) http.Handler {
+		transactionHandler,
+		middleware.LoggingMiddleware,
+		func(next http.Handler) http.Handler {
 			return middleware.APIKeyMiddleware(config.APIKey, next)
+		},
+		func(next http.Handler) http.Handler {
+			return middleware.CORSMiddleware(corsCfg, next)
 		},
 	)
 
