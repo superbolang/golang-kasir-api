@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gokasir-api/database"
 	"gokasir-api/handler"
+	"gokasir-api/middleware"
 	"gokasir-api/repository"
 	"gokasir-api/service"
 	"log"
@@ -41,6 +42,7 @@ var message = `{
 type Config struct {
 	Port   string `mapstructure:"PORT"`
 	DBConn string `mapstructure:"DB_CONN"`
+	APIKey string `mapstructure:"API_KEY"`
 }
 
 func main() {
@@ -56,6 +58,7 @@ func main() {
 	config := Config{
 		Port:   viper.GetString("PORT"),
 		DBConn: viper.GetString("DB_CONN"),
+		APIKey: viper.GetString("API_KEY"),
 	}
 
 	// Init DB
@@ -84,12 +87,33 @@ func main() {
 	transactionService := service.NewTransactionService(transactionRepository)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 
+	// Build middleware chain: Logging → APIKey → Handler
+	protectedProductHandler := middleware.Chain(
+		productHandler,
+		middleware.LoggingMiddleware,
+		func(next http.Handler) http.Handler {
+			return middleware.APIKeyMiddleware(config.APIKey, next)
+		},
+	)
+
+	protectedCategoryHandler := middleware.Chain(
+		categoryHandler, middleware.LoggingMiddleware, func(next http.Handler) http.Handler {
+			return middleware.APIKeyMiddleware(config.APIKey, next)
+		},
+	)
+
+	protectedTransactionHandler := middleware.Chain(
+		transactionHandler, middleware.LoggingMiddleware, func(next http.Handler) http.Handler {
+			return middleware.APIKeyMiddleware(config.APIKey, next)
+		},
+	)
+
 	// Handler
 	http.Handle("/api/v1/product", productHandler)
-	http.Handle("/api/v1/product/", productHandler)
+	http.Handle("/api/v1/product/", protectedProductHandler)
 	http.Handle("/api/v1/category", categoryHandler)
-	http.Handle("/api/v1/category/", categoryHandler)
-	http.Handle("/api/v1/checkout", transactionHandler)
+	http.Handle("/api/v1/category/", protectedCategoryHandler)
+	http.Handle("/api/v1/checkout", protectedTransactionHandler)
 	http.Handle("/api/v1/report", transactionHandler)
 	http.Handle("/api/v1/report/today", transactionHandler)
 
