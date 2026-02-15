@@ -137,7 +137,6 @@ func (r *TransactionRepositoryImpl) TodaysTransaction() (*models.Report, error) 
 			productSold = append(productSold, product)
 		}
 	}
-	log.Println("All product sold: ", productSold)
 
 	highSelling := 0
 	var mostSold string
