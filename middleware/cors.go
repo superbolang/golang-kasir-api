@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
 )
 
 // CORSConfig holds the CORS policy settings.
@@ -32,8 +31,8 @@ func CORSMiddleware(cfg CORSConfig, next http.Handler) http.Handler {
 		allowedOrigins[o] = true
 	}
 
-	methods := strings.Join(cfg.AllowedMethods, ", ")
-	headers := strings.Join(cfg.AllowedHeaders, ", ")
+	// methods := strings.Join(cfg.AllowedMethods, ", ")
+	// headers := strings.Join(cfg.AllowedHeaders, ", ")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
@@ -49,9 +48,18 @@ func CORSMiddleware(cfg CORSConfig, next http.Handler) http.Handler {
 				return
 			}
 
-			w.Header().Set("Access-Control-Allow-Methods", methods)
-			w.Header().Set("Access-Control-Allow-Headers", headers)
-			w.Header().Set("Access-Control-Max-Age", cfg.MaxAge)
+			// w.Header().Set("Access-Control-Allow-Methods", methods)
+			// w.Header().Set("Access-Control-Allow-Headers", headers)
+			// w.Header().Set("Access-Control-Max-Age", cfg.MaxAge)
+
+			// semua origin mendapat ijin akses
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+
+			// semua method diperbolehkan masuk
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+
+			// semua header diperbolehkan untuk disisipkan
+			w.Header().Set("Access-Control-Allow-Headers", "*")
 		}
 
 		// Handle preflight — respond immediately, skip auth & handler
